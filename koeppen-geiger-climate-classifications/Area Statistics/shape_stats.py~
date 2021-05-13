@@ -1,0 +1,26 @@
+#!/usr/bin/python
+# -*- coding: cp1252 -*-
+
+import os
+import sys
+import shapefile
+
+sf = shapefile.Reader("/<somepath>/PreIndstClipped.shp")
+
+records = sf.records()
+
+#init classes array
+
+classes = [0] * 32
+gesammt = 0
+
+for rec in records:
+	classes[rec[1]] = classes[rec[1]] + rec[2]
+	gesammt = gesammt + rec[2]
+
+i = 0
+for cl in classes:
+	print str(i) + ": " + str(cl)
+	i = i + 1
+
+print "Gesammt: " + str(gesammt)
