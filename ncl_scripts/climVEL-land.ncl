@@ -33,6 +33,7 @@ begin
 
  var_ctrl_atm_full = f_ctrl_atm->$var_atm$
  var_ctrl_atm = var_ctrl_atm_full(:239,:,:)
+ ;printVarSummary(var_ctrl_atm)
  var_fdbk_1_atm = f_fdbk_1_atm->$var_atm$
  var_fdbk_2_atm = f_fdbk_2_atm->$var_atm$
  var_fdbk_atm = array_append_record(var_fdbk_1_atm, var_fdbk_2_atm, 0)
@@ -45,6 +46,7 @@ begin
  var_ctrl_grad_lon=var_ctrl_atm ; metadata
  var_ctrl_grad_lat=var_ctrl_atm
  gradsf(var_ctrl_atm,var_ctrl_grad_lon,var_ctrl_grad_lat) ; will not work for land-only data
+ ;printMinMax(var_ctrl_grad_lon, True) 
 
  var_ctrl_grad_lon@long_name = "longitudinal gradient"
  var_ctrl_grad_lat@long_name = "latitudinal gradient"
@@ -57,9 +59,10 @@ begin
  var_ctrl_grad_lon_km@units     = "K/km"
  var_ctrl_grad_lat_km@units     = "K/km"
 
- ;var_ctrl_grad_lon_km_mean = dim_avg_n_Wrap(var_ctrl_grad_lon_km,0)
+ ; is it fair to take a time mean?
+ var_ctrl_grad_lon_km_mean = dim_avg_n_Wrap(var_ctrl_grad_lon_km,0)
  ;printVarSummary(var_ctrl_grad_lon_km_mean)
- ;var_ctrl_grad_lat_km_mean = dim_avg_n_Wrap(var_ctrl_grad_lat_km,0)
+ var_ctrl_grad_lat_km_mean = dim_avg_n_Wrap(var_ctrl_grad_lat_km,0)
 
  ; now for feedback
  var_fdbk_grad_lon=var_fdbk_atm ; metadata
@@ -145,10 +148,10 @@ begin
  ;rate1_gmean = wgt_areaave_Wrap(cV,gw,1.0,0)
  ;print(rate1_gmean)
 
- ;wks = gsn_open_wks("x11","test")
+ wks = gsn_open_wks("x11","test")
  ;wks = gsn_open_wks("pdf","control.TSA.cV")
  ;wks = gsn_open_wks("pdf","feedback.TSA.cV")
- wks = gsn_open_wks("pdf","ClimateVelocity_Fdbk_Ctrl")
+ ;wks = gsn_open_wks("pdf","ClimateVelocity_Fdbk_Ctrl")
 
  plot = new(2, graphic)
 
@@ -186,6 +189,51 @@ begin
  resP@gsnPanelYWhiteSpacePercent = 5 
 
  gsn_panel(wks,plot,(/2,1/),resP)               ; now draw as one plot
+
+ ; Gradients plots
+ ;wks = gsn_open_wks("x11","test")
+ ;wks = gsn_open_wks("pdf","/glade/work/kdagon/GeoCAT/Gradients_NCL")
+ ;wks = gsn_open_wks("pdf","/glade/work/kdagon/GeoCAT/gradsf_rasterfill")
+ wks = gsn_open_wks("pdf","/glade/work/kdagon/GeoCAT/gradsf_areafill")
+ ;res@gsnMaximize = True
+
+ plot2 = new(3, graphic)
+
+ res = True
+ res@gsnDraw             = False            ; don't draw
+ res@gsnFrame            = False            ; don't advance frame
+ ;res@gsnMaximize = True
+ res@cnFillOn = True
+ ;res@cnFillMode           = "RasterFill" ; raster contours (no smoothing)
+ res@cnFillMode           = "AreaFill" ; automatic smoothing of contours
+ res@cnLinesOn = False
+ res@cnLineLabelsOn = False
+ res@cnFillPalette = "MPL_seismic"
+ res@lbLabelBarOn        = False           ; turn off individual cb's  
+ ;res@lbBoxLinesOn = False ; turn off lines in label bar
+
+ res@cnLevelSelectionMode =  "ManualLevels"
+ res@cnMinLevelValF       = -0.1
+ res@cnMaxLevelValF       =  0.1
+ res@cnLevelSpacingF      =  0.005
+
+ res@gsnLeftString = ""
+ res@gsnRightString = "Latitudinal Temperature Gradient, K/km"
+ plot2(0) = gsn_csm_contour_map(wks,var_ctrl_grad_lat_km_mean,res)
+
+ res@gsnRightString = "Longitudinal Temperature Gradient, K/km"
+ plot2(1) = gsn_csm_contour_map(wks,var_ctrl_grad_lon_km_mean,res)
+
+ res@gsnRightString = "Total Gradient (by average maximum technique), K/km"
+ plot2(2) = gsn_csm_contour_map(wks,var_ctrl_grad_mean,res)
+
+ resP                  = True
+ resP@gsnPanelLabelBar = True                   ; add common colorbar
+ resP@lbBoxLinesOn         = False     ; Turn off labelbar box lines
+ resP@gsnPanelYWhiteSpacePercent = 5
+ ;resP@gsnPanelMainString = "Control Ensemble Mean, Annual Mean, 2010-2029"     ; set main title
+
+ gsn_panel(wks,plot2,(/3,1/),resP)               ; now draw as one plot
 
  ; 4 panel plot
  ;plot = new(4,graphic)
